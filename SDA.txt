@@ -1,0 +1,808 @@
+Practical Assignment – 1
+Exploratory Data Analysis
+
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+import datetime as dt
+import sklearn
+
+df = pd.read_csv('/content/sample_data/Cricket.csv',encoding='latin1')
+df.head()
+
+#Check the shape of data
+df.shape
+#Data Inspection
+df.info()
+
+#Data Cleaning
+#Null Percentage: Columns
+(df.isnull().sum() * 100 / len(df)).value_counts(ascending=False)
+#Null Count: Columns
+df.isnull().sum().value_counts(ascending=False)
+
+#Null Percentage: Rows
+(df.isnull().sum(axis=1) * 100 / len(df)).value_counts(ascending=False)
+#Null Count: Rows
+df.isnull().sum(axis=1).value_counts(ascending=False)
+
+#Check the duplicate rows.
+df.duplicated()
+
+#Check the categorical and numerical columns
+# Categorical columns
+cat_col = [col for col in df.columns if df[col].dtype == 'object']
+print('Categorical columns :',cat_col)
+# Numerical columns
+num_col = [col for col in df.columns if df[col].dtype != 'object']
+print('Numerical columns :',num_col)
+
+#Check the total number of unique values in the Categorical columns
+df[cat_col].nunique()
+
+df[['Strt','End']] = df.Span.str.split("-",expand=True)
+
+df[['Strt','End']]=df[['Strt','End']].astype(int)
+df['Exp']=df['End']-df['Strt']
+df=df.drop(['Strt','End','Span'], axis = 1)
+df.head()
+
+# Univariate Analysis
+
+#Match Played
+plt.figure(figsize = (30,5))
+mat = df[['Player','Mat']].sort_values('Mat', ascending = False)
+ax = sns.barplot(x='Player', y='Mat', data= mat)
+ax.set(xlabel = '', ylabel= 'Match Played')
+plt.xticks(rotation=90)
+plt.show()
+
+# AVG of Top 10 Players
+plt.figure(figsize = (10,5))
+avg_top10 = df[['Player','Ave']].sort_values('Ave', ascending = False).head(10)
+ax = sns.barplot(x='Player', y='Ave', data= avg_top10)
+for p in ax.patches:
+    ax.annotate(str(p.get_height()), (p.get_x() * 1.01 , p.get_height() * 1.01))
+ax.set(xlabel = '', ylabel= 'Averages')
+plt.xticks(rotation=90)
+plt.show()
+
+#Exp
+plt.figure(figsize = (30,5))
+exp = df[['Player','Exp']].sort_values('Exp', ascending = False)
+ax = sns.barplot(x='Player', y='Exp', data= exp)
+ax.set(xlabel = '', ylabel= 'Experience')
+plt.xticks(rotation=90)
+plt.show()
+
+plt.figure(figsize = (10,5))
+exp_top10 = df[['Player','Exp']].sort_values('Exp', ascending = False).head(10)
+ax = sns.barplot(x='Player', y='Exp', data= exp_top10)
+for p in ax.patches:
+    ax.annotate(str(p.get_height()), (p.get_x() * 1.01 , p.get_height() * 1.01))
+ax.set(xlabel = '', ylabel= 'Exprience')
+plt.xticks(rotation=90)
+plt.show()
+
+# Let's check the correlation coefficients to see which variables are highly correlated
+plt.figure(figsize = (10, 10))
+sns.heatmap(df.corr(), annot = True, cmap="rainbow")
+plt.savefig('Correlation')
+plt.show()
+
+Practical Assignment – 2     
+
+Correlation Analysis
+
+   - Investigate the relationship between player age and performance metrics using 
+     correlation analysis.
+
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+from scipy.stats import pearsonr
+import seaborn as sns
+
+# Create a dummy dataset
+data = {
+    'Player': ['Player1', 'Player2', 'Player3', 'Player4', 'Player5','Player6','Player7','Player8','Player9','Player10'],
+    'Player_Age': [25, 30, 22, 28, 35, 23, 28, 24, 33, 35],
+    'Batting_Average': [45.2, 38.6, 42.0, 36.8, 40.5, 42.6, 39.5, 44.7, 37.8, 43.3],
+    'Strike_Rate': [120.5, 110.2, 130.8, 105.3, 125.6, 115.2, 125.0, 132.4, 110.4, 124.6]
+}
+
+cricket_df = pd.DataFrame(data)
+
+# Assuming your dataset has columns 'Player_Age', 'Batting_Average', and 'Strike_Rate'
+player_age = cricket_df['Player_Age']
+batting_average = cricket_df['Batting_Average']
+strike_rate = cricket_df['Strike_Rate']
+
+# Perform correlation analysis for Batting Average
+correlation_coefficient_avg, p_value_avg = pearsonr(player_age, batting_average)
+
+# Visualize the relationship using a scatter plot for Batting Average
+plt.scatter(player_age, batting_average, alpha=0.5)
+plt.title(f'Correlation Analysis\nBatting Average: {correlation_coefficient_avg:.2f}, p-value: {p_value_avg:.4f}')
+plt.xlabel('Player Age')
+plt.ylabel('Batting Average')
+plt.show()
+
+# Perform correlation analysis for Strike Rate
+correlation_coefficient_sr, p_value_sr = pearsonr(player_age, strike_rate)
+
+# Visualize the relationship using a scatter plot for Strike Rate
+plt.scatter(player_age, strike_rate, alpha=0.5)
+plt.title(f'Correlation Analysis\nStrike Rate: {correlation_coefficient_sr:.2f}, p-value: {p_value_sr:.4f}')
+plt.xlabel('Player Age')
+plt.ylabel('Strike Rate')
+plt.show()
+
+# Calculate correlations
+correlations = cricket_df.corr()
+
+# Print the correlation matrix
+print(correlations)
+
+# Visualize correlations
+sns.heatmap(correlations, annot=True, cmap="coolwarm")
+plt.title("Correlation Matrix for Player Age and Performance Metrics")
+plt.show()
+
+
+Practical Assignment – 3
+Predictive Modeling
+Build a regression model to predict the number of runs scored by players based on their historical performance data.
+
+import pandas as pd
+import numpy as np
+from sklearn.ensemble import RandomForestRegressor
+
+# Load historical data on the player's performance
+# Sample data is already added to the csv file
+df = pd.read_csv('/content/sample_data/player_stats.csv')
+
+# Preprocess the data by removing missing values and selecting relevant features
+df = df.dropna()
+stats_to_predicte_score = df[['BattingAverage', 'StrikeRate', 'WicketsTaken']].values
+
+stats_to_predicte_wickets = df[['BattingAverage', 'StrikeRate', 'Score']].values
+
+score_data = df['Score'].values
+
+wickets_data = df['WicketsTaken'].values
+
+# Train a random forest regression model on the historical data
+model = RandomForestRegressor(n_estimators=100, random_state=42)
+model.fit(stats_to_predicte_score, score_data)
+
+# Get the player's statistics for the upcoming match
+upcoming_match_data = [[45.2, 78.6, 5]]  # Example input features "Batting Average", "Strike Rate",
+upcoming_match_data = np.array(upcoming_match_data)
+
+# Make a prediction using the trained model
+predicted_score = model.predict(upcoming_match_data)
+
+model = RandomForestRegressor(n_estimators=100, random_state=42)
+model.fit(stats_to_predicte_wickets, wickets_data)
+
+upcoming_match_data = [[45.2, 78.6, 112]]  # Example input features
+upcoming_match_data = np.array(upcoming_match_data)
+predicted_wickets = model.predict(upcoming_match_data)
+
+print(f'Predicted score & wickets for the upcoming match: {float(predicted_score)}, {int(predicted_wickets)}')
+
+
+o/p : 
+
+Predicted score & wickets for the upcoming match: 120.6, 4
+
+
+Practical Assignment – 4
+Predictive Modeling
+Develop a classification model to predict the outcome of match based on team’s statistics.
+
+from sklearn.utils.fixes import sklearn
+import pandas as pd
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import accuracy_score, confusion_matrix, classification_report
+import matplotlib.pyplot as plt
+from sklearn.tree import plot_tree
+from sklearn.datasets import load_wine
+
+# Load the dataset
+dataset = pd.read_csv('/content/sample_data/Book1.csv')
+
+# Split the dataset into features (X) and target variable (y)
+X = dataset.drop('Outcome', axis=1)
+y = dataset['Outcome']
+
+# Create the RandomForestClassifier model
+model = RandomForestClassifier()
+
+# Train the model
+model.fit(X, y)
+
+# Get user input
+team_a_batting_avg = float(input("Enter Team A Batting Average: "))
+team_b_bowling_avg = float(input("Enter Team B Bowling Average: "))
+venue = input("Enter Venue: ")
+toss_outcome = input("Enter Toss Outcome (Won/Lost): ")
+player_injuries = input("Enter Player Injuries (None/Key Player Injured): ")
+weather_conditions = input("Enter Weather Conditions: ")
+
+# Create a new DataFrame with user input
+user_input = pd.DataFrame([[team_a_batting_avg, team_b_bowling_avg, venue, toss_outcome, player_injuries, weather_conditions]],
+                          columns=['Team A Batting Average', 'Team B Bowling Average', 'Venue', 'Toss Outcome', 'Player Injuries', 'Weather Conditions'])
+
+# Use the trained model to make predictions on the user input
+prediction = model.predict(user_input)
+
+if prediction[0] == 'Win':
+    print("Predicted Outcome: Team A will win")
+else:
+    print("Predicted Outcome: Team A will lose")
+
+# Create a test set with user input and corresponding label
+test_set = pd.DataFrame([[team_a_batting_avg, team_b_bowling_avg, venue, toss_outcome, player_injuries, weather_conditions, prediction[0]]],
+                        columns=['Team A Batting Average', 'Team B Bowling Average', 'Venue', 'Toss Outcome', 'Player Injuries', 'Weather Conditions', 'Outcome'])
+
+# Evaluate the accuracy of the model on the test set
+y_test = test_set['Outcome']
+X_test = test_set.drop('Outcome', axis=1)
+y_pred = model.predict(X_test)
+
+accuracy = accuracy_score(y_test, y_pred)
+accuracy_percentage = accuracy * 100
+print("Accuracy: {:.2f}%".format(accuracy_percentage))
+
+# Print the detailed confusion matrix
+cm = confusion_matrix(y_test, y_pred)
+#labels = ['Loss', 'Win']
+labels= model.classes_
+cm_df = pd.DataFrame(cm, index=labels, columns=labels)
+print("Confusion Matrix:")
+print(cm_df)
+
+# Print the classification report
+report = classification_report(y_test, y_pred)
+print("Classification Report:")
+print(report)
+
+# Access the individual decision trees in the forest
+trees = model.estimators_
+
+# Print each decision tree in the forest
+for i, tree in enumerate(trees):
+    print(f"Tree {i+1}:")
+    print(tree)
+    print()
+wine = load_wine()
+X1 = wine.data
+y1 = wine.target
+plot_tree(model.estimators_[0],
+          feature_names=wine.feature_names,
+          class_names=wine.target_names,
+          filled=True, impurity=True,
+          rounded=True)
+
+
+Practical Assignment – 5     
+Batting Performance Analysis
+
+Dataset Used : 
+1.	IPL_Ball_by_Ball_2022.csv
+2.	IPL_Matches_2022_.csv
+
+Importing the Libraries and Packages
+
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+
+Loading the data
+
+dfDeliveries = pd.read_csv('/content/sample_data/IPL_Ball_by_Ball_2022.csv')
+dfMatches = pd.read_csv('/content/sample_data/IPL_Matches_2022_.csv')
+
+dfDeliveries.head()
+
+dfMatches.head()
+Data PreProcessing
+
+dfDeliveries = dfDeliveries.merge(dfMatches, on='ID')
+
+dfDeliveries['BowlingTeam'] = np.where(dfDeliveries['BattingTeam']==dfDeliveries['Team1'],
+                                       dfDeliveries['Team2'],
+                                       dfDeliveries['Team1'])
+
+
+dfDeliveries.head()
+
+Innings, Runs and Dismissals
+
+dfBatsmen = dfDeliveries.groupby('batter')\
+            .agg({'ID':'nunique','batsman_run':'sum','isWicketDelivery':'sum'})\
+            .reset_index()
+
+dfBatsmen.head()
+
+dfBatsmen.columns = ['Batter','Innings','Runs','Dismissals']
+
+dfBatsmen.head()
+
+#Balls Faced
+
+dfBallsFaced = dfDeliveries[(dfDeliveries['extra_type']!='wides')].groupby('batter')['ID'].count().reset_index()
+dfBallsFaced.columns = ['Batter','Balls Faced']
+
+dfBallsFaced.head()
+
+#Boundaries – 4s and 6s
+
+dfBatter4s = dfDeliveries[(dfDeliveries['batsman_run']==4)&(dfDeliveries['non_boundary']==0)]\
+            .groupby('batter')['ID']\
+            .count()\
+            .reset_index()\
+            .sort_values('ID')
+dfBatter4s.columns = ['Batter','4s']
+
+dfBatter4s.head()
+
+dfBatter6s = dfDeliveries[(dfDeliveries['batsman_run']==6)&(dfDeliveries['non_boundary']==0)]\
+            .groupby('batter')['ID']\
+            .count()\
+            .reset_index()\
+            .sort_values('ID')
+dfBatter6s.columns = ['Batter','6s']
+
+dfBatter6s.head()
+
+
+dfMatchWise = dfDeliveries.groupby(['batter','ID'])['batsman_run'].sum().reset_index()
+
+dfMatchWise.head()
+
+#High Score
+dfHighScore = dfMatchWise.groupby(['batter'])['batsman_run'].max().reset_index()
+dfHighScore.columns = ['Batter','High Score']
+
+
+dfHighScore.head()
+
+#50s and 100s
+
+df50s = dfMatchWise[(dfMatchWise['batsman_run']>=50)&(dfMatchWise['batsman_run']<100)]\
+        .groupby('batter')['batsman_run']\
+        .count()\
+        .reset_index()\
+        .sort_values('batsman_run',ascending=False)
+df50s.columns = ['Batter','50']
+
+df50s.head()
+
+df100s = dfMatchWise[(dfMatchWise['batsman_run']>=100)]\
+        .groupby('batter')['batsman_run']\
+        .count()\
+        .reset_index()\
+        .sort_values('batsman_run',ascending=False)
+df100s.columns = ['Batter','100']
+
+df100s.head()
+
+#Merging all the DataFrames
+
+
+dfBatsmen = dfBatsmen.merge(dfBallsFaced, on='Batter',how='outer').merge(dfBatter4s, on='Batter',how='outer')\
+                     .merge(dfBatter6s, on='Batter',how='outer').merge(dfHighScore, on='Batter',how='outer')\
+                     .merge(df50s, on='Batter',how='outer').merge(df100s, on='Batter',how='outer')
+
+dfBatsmen.head()
+
+dfBatsmen['Strike Rate'] = (dfBatsmen['Runs']/dfBatsmen['Balls Faced'])*100
+dfBatsmen['Batting Average'] = dfBatsmen['Runs']/dfBatsmen['Dismissals']
+
+dfBatsmen.fillna(0, inplace=True)
+
+dfBatsmen.sort_values(by='Runs', ascending=False).head()
+
+Practical Assignment – 6     
+
+Bowling Performance Analysis
+
+   - Analyze bowling performance in the Cricket dataset, calculating metrics such as 
+      bowling average, economy rate, and wickets taken by players.
+   - Identify top-performing bowlers based on performance metrics and analyze their 
+      performance against different teams or in various match situations.
+
+
+Dataset Used : 
+1.IPL_Ball_by_Ball_2022.csv
+2.IPL_Matches_2022_.csv
+
+Importing the Libraries and Packages
+
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+
+Loading the data
+
+dfDeliveries = pd.read_csv('/content/sample_data/IPL_Ball_by_Ball_2022.csv')
+dfMatches = pd.read_csv('/content/sample_data/IPL_Matches_2022_.csv')
+
+dfDeliveries.head()
+dfMatches.head()
+
+dfDeliveries = dfDeliveries.merge(dfMatches, on='ID')
+
+dfDeliveries['BowlingTeam'] = np.where(dfDeliveries['BattingTeam']==dfDeliveries['Team1'],
+                                       dfDeliveries['Team2'],
+                                       dfDeliveries['Team1'])
+
+#TeamWise Aggregation – Bowling Metrics in Death Overs
+A T20 game can be divided into three phases. They are,
+•	Power Play (1-6 overs)
+•	Middle Overs (7-15 overs)
+•	Death Overs (16-20 overs)
+#create a small function that returns the phase of the game based on the over.
+def overClassifier(val):
+    if val>=0 and val<6:
+        return 'Power Play'
+    elif val>=6 and val<15:
+        return 'Middle Overs'
+    else:
+        return 'Death Overs'
+
+dfDeliveries['PhaseOfPlay'] = dfDeliveries['overs'].map(overClassifier)
+
+
+dfDeliveries[['overs','PhaseOfPlay']].sort_values('overs').drop_duplicates().reset_index(drop=True)
+
+#Innings, Runs and Dismissals
+
+dfDeathBowling = dfDeathOvers.groupby('BowlingTeam').agg({'total_run':'sum','isWicketDelivery':'sum'}).reset_index()
+
+dfDeathBowling.columns = ['Team','Runs Conceded','Wickets']
+
+dfDOBallsBowled = dfDeliveries[~((dfDeliveries['extra_type']=='wides'))&(dfDeliveries['PhaseOfPlay']=='Death Overs')]\
+                  .groupby('BowlingTeam')['ID']\
+                  .count().reset_index()
+dfDOBallsBowled.columns = ['Team','Balls Bowled']
+
+dfDeathBowling = dfDeathBowling.merge(dfDOBallsBowled, on='Team')
+
+#Overs, Bowling Average, Bowling Strike Rate and Economy Rate
+
+dfDeathBowling['Overs'] = dfDeathBowling['Balls Bowled']/6
+dfDeathBowling['Bowling Average'] = dfDeathBowling['Runs Conceded']/dfDeathBowling['Wickets']
+dfDeathBowling['Bowling Strike Rate'] = dfDeathBowling['Balls Bowled']/dfDeathBowling['Wickets']
+dfDeathBowling['Economy Rate'] = dfDeathBowling['Runs Conceded']/dfDeathBowling['Overs']
+
+dfDeathBowling = dfDeathBowling.sort_values('Economy Rate',ascending=False).reset_index(drop=True)
+
+
+dfDeathBowling
+
+fig,ax = plt.subplots(figsize=(12,10))
+
+# Setting background colors
+fig.set_facecolor('black')
+ax.patch.set_facecolor('black')
+
+# Setting the grid for axis
+ax.set_axisbelow(True)
+ax.grid(color='grey',which='major',linestyle='--',alpha=0.75)
+
+# Embellishing the spines
+ax.spines['right'].set_visible(False)
+ax.spines['top'].set_visible(False)
+ax.spines['left'].set_color('white')
+ax.spines['bottom'].set_color('white')
+ax.spines['left'].set_linewidth(3)
+ax.spines['bottom'].set_linewidth(3)
+
+# Normalizing the Economy Rate values
+scaler = MinMaxScaler(feature_range=(0.2,1))
+# Using the normalized Economy Rate values as alpha values
+alphaList = scaler.fit_transform(dfDeathBowling['Economy Rate'].values.reshape(-1,1)).flatten().tolist()
+alphaList.reverse()
+
+# Plotting the horizontal bar graph
+for index,row in dfDeathBowling.iterrows():
+    ax.barh(dfDeathBowling['Team'][index],dfDeathBowling['Economy Rate'][index],
+            color='#0217fa',alpha=alphaList[index])
+
+    ax.barh(dfDeathBowling['Team'][index],dfDeathBowling['Economy Rate'][index],
+            color='None',edgecolor='white',lw=2)
+
+# Setting the fontsize, color and font-style of the tick labels
+plt.yticks(fontsize=16,color='white',fontname='Arial Rounded MT Bold')
+plt.xticks(fontsize=13,color='white',fontname='Arial Rounded MT Bold')
+
+# Setting the labels and the title
+plt.xlabel('Economy Rate',fontsize=18,color='white',fontname='Arial Rounded MT Bold')
+
+plt.title(x=0.35,y=1.05,label='Economy Rate in Death Overs\nIndian Premier League - 2022',
+          fontsize=28,color='white',fontname='Arial Rounded MT Bold')
+
+plt.show()
+
+
+Practical Assignment – 7     
+
+Player Position Analysis
+
+   - Calculate position-specific performance metrics and compare players within each 
+     position.
+
+Dataset Used: 
+1.position.csv
+
+
+Importing the Libraries and Packages
+
+import pandas as pd
+from sklearn.model_selection import train_test_split
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import accuracy_score
+
+Loading the data
+
+dfMatches = pd.read_csv('/content/sample_data/position.csv')
+
+dfMatches.head()
+#Batting Average 
+dfBA= dfMatches['Runs']/(dfMatches['Inns']-dfMatches['NO'])
+#Batting Strike Rate
+dfSR = ((dfMatches['Runs']*100)/dfMatches['BF'])
+
+# Split the data into features and target
+X = dfMatches.drop('Position', axis=1)
+y = dfMatches['Position']
+
+# Split the data into training and testing sets
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+# Train a Random Forest Classifier
+clf = RandomForestClassifier(random_state=42)
+clf.fit(X_train, y_train)
+
+# Make predictions on the test set
+y_pred = clf.predict(X_test)
+
+# Predict the best position for a new player (replace with actual player features)
+new_player_features = [[61, 61, 8,  2059, 140,  38.84,  2671, 77.08,  4,  15, 5 ,164, 14]]
+predicted_position = clf.predict(new_player_features)
+print(f"Predicted Best Position: {predicted_position[0]}")
+
+
+Practical Assignment – 8     
+
+Injury Analysis 
+
+   - Investigate the relationship between player injuries and their subsequent 
+      performance using historical injury and performance data.
+
+
+Dataset Used: 
+1.injury_data.csv
+
+
+Importing the Libraries and Packages
+
+import pandas as pd
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import accuracy_score, classification_report
+
+
+Loading the data
+
+data = pd.read_csv('/content/sample_data/injury_data.csv')
+
+data.head()
+
+
+Selected_features = [
+    'Innings_Played', 'Overs_Bowled', 'Distance_Covered',
+    'Previous_Injuries', 'Joint_Angle', 'Training_Intensity',
+    'Age', 'Stress_Level', 'Weather_Conditions'
+]
+
+
+X = data[selected_features]
+y = data['Got_Injured']
+
+# Split the dataset into training and testing sets
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+# Standardize the features
+scaler = StandardScaler()
+X_train = scaler.fit_transform(X_train)
+X_test = scaler.transform(X_test)
+
+model = RandomForestClassifier(random_state=42)
+
+# Train the model
+model.fit(X_train, y_train)
+
+# Make predictions on the test set
+y_pred = model.predict(X_test)
+
+# Evaluate the model
+accuracy = accuracy_score(y_test, y_pred)
+report = classification_report(y_test, y_pred)
+
+# Display the results
+print(f"Accuracy: {accuracy:.2f}")
+print("Classification Report:")
+print(report)
+
+
+Practical Assignment – 9     
+Team Analysis 
+
+Dataset Used: 
+1.IPL_Matches_2022.csv
+
+# Import necessary libraries
+import pandas as pd
+import plotly.express as px
+import plotly.graph_objects as go
+
+#Data Preparation and Cleaning
+
+#Loading the data
+# Read IPL match data from a CSV file
+data = pd.read_csv("/content/sample_data/IPL_Matches_2022.csv")
+
+#Explore the Dataset
+# Get the dimensions of the dataset
+data.shape  # 74 rows & 20 columns
+data.info()
+
+data.columns  # to fetch all column names
+
+# Count missing values in each column
+data.isnull().sum()  # to check null values present in dataset
+
+# Analyze team statistics
+# Number of Matches played by team1
+data['team1'].value_counts()
+
+# Number of Matches played by team2
+data['team2'].value_counts()
+
+# Calculate the total matches played by each team
+data['team1'].value_counts() + data['team2'].value_counts()
+
+#Handle the NaN in Total Matches Calculation
+total_matches_played = data['team1'].value_counts().add(data['team2'].value_counts(), fill_value=0).astype(int)
+total_matches_played
+
+# Calculate the total matches won by each team
+total_won= data['match_winner'].value_counts()
+total_won
+
+# Calculate the win percentage for each team
+win_percentage = ((total_won / total_matches_played) * 100).sort_values(ascending=False).astype(int)
+win_percentage
+
+# Create a DataFrame to store team performance data
+# & Sort the DataFrame by win percentage in descending order
+
+team_performance = pd.DataFrame({
+    'Total Matches Played': total_matches_played,
+    'Total Matches Won': total_won,
+    'Win Percentage (%)': win_percentage
+}).sort_values(by='Win Percentage (%)', ascending=False)
+
+team_performance
+
+#Visulaize the team performance in Bar Chart
+import matplotlib.pyplot as plt
+
+# Plotting a bar chart
+plt.bar(team_performance ['Total Matches Played'], team_performance ['Total Matches Won'])
+
+# Adding labels and title
+plt.xlabel('Total Matches Played')
+plt.ylabel('Total Matches Won')
+plt.title('Performance')
+
+# Display the plot
+plt.show()
+
+#Best Player of the Match:
+data.groupby('player_of_the_match')['match_id'].count().sort_values(ascending=False)[:10]
+
+# Calculate the total high scores for each player and display the top 10 players
+data.groupby('top_scorer')['highscore'].sum().sort_values(ascending=False)[:10]
+
+# Count the number of toss wins by each IPL team
+data['toss_winner'].value_counts()
+
+# Find out how many times a team has won the match after winning the Toss
+toss_match_won = data[data['toss_winner'] == data['match_winner']]['match_winner'].value_counts()
+toss_match_won
+
+# calculate the total matches won
+match_won = data['match_winner'].value_counts()
+match_won
+
+# Calculate the percentage of matches won when the team wins both the toss and the match
+percentage_won = (toss_match_won / match_won * 100).astype(int).sort_values(ascending=False)
+percentage_won
+
+
+Practical Assignment – 10     
+Sports Revenue Analysis 
+
+Dataset Used: 
+Dummy Dataset of 4 Matches with factors like Ticket Sales, Merchandise Sales, Sponsorship Deals, broadcast rights, concessions, and licensing fees
+
+# Import necessary libraries
+import pandas as pd
+import matplotlib.pyplot as plt
+
+
+#Data Preparation and Cleaning
+
+data = {
+    'Match': ['Match-1', 'Match-2', 'Match-3', 'Match-4'],
+    'Ticket Sales': [500000, 750000, 600000, 900000],
+    'Merchandise Sales': [200000, 150000, 180000, 250000],
+    'Sponsorship Deals': [300000, 400000, 350000, 500000],
+    'broadcast_rights': [200000, 150000, 180000, 250000],
+    'concessions':[50000, 75000, 60000, 90000],
+    'licensing_fees':[200000, 150000, 180000, 250000]
+}
+
+
+#Loading the data
+# Create a DataFrame
+df = pd.DataFrame(data)
+
+# Calculate total revenue
+df['Total Revenue'] = df['Ticket Sales'] + df['Merchandise Sales'] + df['Sponsorship Deals']+ df['broadcast_rights']+df['concessions']+df['licensing_fees']
+
+# Calculate average revenue per category
+df['Avg Ticket Revenue'] = df['Ticket Sales'] / df['Total Revenue']
+df['Avg Merchandise Revenue'] = df['Merchandise Sales'] / df['Total Revenue']
+df['Avg Sponsorship Revenue'] = df['Sponsorship Deals'] / df['Total Revenue']
+df['Avg broadcast_rights Revenue'] = df['broadcast_rights'] / df['Total Revenue']
+df['Avg concessions Revenue'] = df['concessions'] / df['Total Revenue']
+df['Avg licensing_fees Revenue'] = df['licensing_fees'] / df['Total Revenue']
+
+
+# Display the updated DataFrame
+print("Sports Revenue Data:")
+print(df)
+
+
+
+# Bar chart for Total Revenue by Team
+plt.figure(figsize=(6, 3))
+plt.bar(df['Match'], df['Total Revenue'], color=['blue', 'green', 'orange', 'red'])
+plt.xlabel('Match')
+plt.ylabel('Total Revenue ($)')
+plt.title('Total Revenue by Match')
+plt.show()
+
+
+# Pie chart for the distribution of revenue categories for a specific team (e.g., Team A)
+selected_team = 'Match-1'
+team_data = df[df['Match'] == selected_team].iloc[:, 1:7].squeeze()
+
+plt.figure(figsize=(8, 8))
+plt.pie(team_data, labels=team_data.index, autopct='%1.1f%%', startangle=90, colors=['blue', 'green', 'orange','pink','red','cyan'])
+plt.title(f'Revenue Distribution for {selected_team}')
+plt.show()
+	
+
+
+
+
